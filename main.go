@@ -36,6 +36,7 @@ func main() {
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "booking")
 	})
+	e.GET("/shows", showHandler.FindAll)
 	e.POST("/shows", showHandler.Create)
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%s", config.Get().App.Port)))
 }

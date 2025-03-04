@@ -6,6 +6,11 @@ type Show struct {
 	Description string `gorm:"type:text"`
 }
 
+type FindAllShowRequest struct {
+	PaginationRequest
+	Search string `query:"search"`
+}
+
 type CreateShowRequest struct {
 	Name        string `validate:"required,min=6,max=255"`
 	Description string

@@ -21,6 +21,30 @@ func NewShowHandler(service *service.ShowService, validator *validator.Validate)
 	}
 }
 
+func (h *ShowHandler) FindAll(c echo.Context) error {
+	var req entity.FindAllShowRequest
+
+	if err := c.Bind(&req); err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.Limit <= 0 {
+		req.Limit = 15
+	}
+	if req.Search != "" {
+		req.Search = "%" + req.Search + "%"
+	}
+
+	res, err := h.service.FindAll(c.Request().Context(), req)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+	return c.JSON(http.StatusOK, res)
+}
+
 func (h *ShowHandler) Create(c echo.Context) error {
 	var body entity.CreateShowRequest
 	if err := c.Bind(&body); err != nil {
