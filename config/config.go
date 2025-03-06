@@ -25,7 +25,11 @@ func Get() *Config {
 	if config != nil {
 		return config
 	}
-	c := initConfig()
+	c, err := initConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	config = c
 	return c
 }
@@ -52,9 +56,9 @@ func validateConfig() error {
 	return nil
 }
 
-func initConfig() *Config {
+func initConfig() (*Config, error) {
 	if err := validateConfig(); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	c := Config{}
@@ -65,5 +69,5 @@ func initConfig() *Config {
 	c.DB.User = os.Getenv("POSTGRES_USER")
 	c.DB.Password = os.Getenv("POSTGRES_PASSWORD")
 	c.DB.DBName = os.Getenv("POSTGRES_DB")
-	return &c
+	return &c, nil
 }

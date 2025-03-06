@@ -32,11 +32,21 @@ func main() {
 	showService := service.NewShowService(showRepository)
 	showHandler := handler.NewShowHandler(showService, validator)
 
+	ticketRepository := repository.NewTicketRepository(db)
+
+	orderRepository := repository.NewOrderRepository(db)
+	orderService := service.NewOrderService(orderRepository, ticketRepository)
+	orderHandler := handler.NewOrderHandler(orderService, validator)
+
 	e := echo.New()
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "booking")
 	})
 	e.GET("/shows", showHandler.FindAll)
+	e.GET("/shows/:id", showHandler.FindById)
 	e.POST("/shows", showHandler.Create)
+
+	e.POST("/shows/:id/book", orderHandler.Book)
+
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%s", config.Get().App.Port)))
 }

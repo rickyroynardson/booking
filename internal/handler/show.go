@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
@@ -40,6 +41,19 @@ func (h *ShowHandler) FindAll(c echo.Context) error {
 
 	res, err := h.service.FindAll(c.Request().Context(), req)
 	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+	return c.JSON(http.StatusOK, res)
+}
+
+func (h *ShowHandler) FindById(c echo.Context) error {
+	id := c.Param("id")
+
+	res, err := h.service.FindById(c.Request().Context(), id)
+	if err != nil {
+		if errors.Is(err, entity.ErrShowNotFound) {
+			return c.String(http.StatusNotFound, err.Error())
+		}
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
 	return c.JSON(http.StatusOK, res)

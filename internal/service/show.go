@@ -46,6 +46,20 @@ func (s *ShowService) FindAll(ctx context.Context, req entity.FindAllShowRequest
 	return response, nil
 }
 
+func (s *ShowService) FindById(ctx context.Context, id string) (*entity.FindShowByIdResponse, error) {
+	show, err := s.repository.FindById(ctx, id)
+
+	if _, err := uuid.Parse(id); err != nil {
+		return nil, entity.ErrShowNotFound
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return show, nil
+}
+
 func (s *ShowService) Create(ctx context.Context, body entity.CreateShowRequest) error {
 	show := entity.Show{
 		ID:          uuid.New().String(),
