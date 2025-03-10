@@ -3,3 +3,6 @@
 
 # dev
 /tmp
+
+# logs
+*_logs.txt

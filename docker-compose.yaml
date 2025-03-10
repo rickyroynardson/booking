@@ -14,8 +14,20 @@ services:
     networks:
       - booking_net
 
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
+    networks:
+      - booking_net
+
 volumes:
   db:
+  rabbitmq:
 
 networks:
   booking_net:
