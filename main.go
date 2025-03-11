@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -19,6 +20,7 @@ import (
 	"github.com/rickyroynardson/booking/internal/messaging/publisher"
 	"github.com/rickyroynardson/booking/internal/repository"
 	"github.com/rickyroynardson/booking/internal/service"
+	"github.com/rickyroynardson/booking/internal/telemetry"
 	"github.com/rickyroynardson/booking/lib"
 )
 
@@ -57,6 +59,17 @@ func main() {
 		log.Fatalf("failed to declare bookings queue: %v", err)
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	otelShutdown, err := telemetry.SetupOtel(ctx)
+	if err != nil {
+		log.Fatalf("failed to setup otel: %v", err)
+	}
+	defer func() {
+		err = errors.Join(err, otelShutdown(context.Background()))
+	}()
+
 	validator := validator.New(validator.WithRequiredStructEnabled())
 
 	bookingPublisher := publisher.NewBookingPublisher(ch, q.Name)
@@ -87,9 +100,6 @@ func main() {
 	e.POST("/shows", showHandler.Create)
 
 	e.POST("/shows/:id/book", orderHandler.Book)
-
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer stop()
 
 	go func() {
 		e.Logger.Fatal(e.Start(fmt.Sprintf(":%s", config.Get().App.Port)))

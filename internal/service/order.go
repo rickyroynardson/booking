@@ -8,6 +8,9 @@ import (
 	"github.com/rickyroynardson/booking/internal/entity"
 	"github.com/rickyroynardson/booking/internal/messaging/publisher"
 	"github.com/rickyroynardson/booking/internal/repository"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 )
 
 type OrderService struct {
@@ -25,11 +28,22 @@ func NewOrderService(repository *repository.OrderRepository, ticketRepository *r
 }
 
 func (s *OrderService) Book(ctx context.Context, body entity.BookOrderRequest) error {
+	tracer := otel.Tracer("order-service")
+
+	ctx, span := tracer.Start(ctx, "Book")
+	defer span.End()
+
+	span.SetAttributes(attribute.String("ticket_id", body.TicketID), attribute.Int("quantity", body.Quantity))
+
 	ticket, err := s.ticketRepository.FindById(ctx, body.TicketID)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 	if ticket.RemainingCapacity < body.Quantity {
+		span.RecordError(errors.New("remaining ticket is not enough"))
+		span.SetStatus(codes.Error, "remaining ticket is not enough")
 		return errors.New("remaining ticket is not enough")
 	}
 
@@ -42,14 +56,19 @@ func (s *OrderService) Book(ctx context.Context, body entity.BookOrderRequest) e
 	}
 	err = s.repository.Book(ctx, order)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 
 	err = s.bookingPublisher.PublishBooking(orderID, body.TicketID, body.Quantity)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 
+	span.SetAttributes(attribute.String("order_id", orderID))
 	return nil
 }
 
