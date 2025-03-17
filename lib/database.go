@@ -11,6 +11,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"gorm.io/plugin/opentelemetry/tracing"
 )
 
 func ConnectDB() (*gorm.DB, error) {
@@ -31,6 +32,11 @@ func ConnectDB() (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	// otel tracing
+	if err := db.Use(tracing.NewPlugin()); err != nil {
+		return nil, err
+	}
+	// auto migration
 	err = db.AutoMigrate(&entity.Show{}, &entity.Ticket{}, &entity.Order{})
 	if err != nil {
 		return nil, err

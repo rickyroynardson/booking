@@ -5,6 +5,9 @@ import (
 	"errors"
 
 	"github.com/rickyroynardson/booking/internal/entity"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"gorm.io/gorm"
 )
 
@@ -30,7 +33,25 @@ func (r *OrderRepository) FindById(ctx context.Context, id string) (*entity.Orde
 }
 
 func (r *OrderRepository) Book(ctx context.Context, body entity.Order) error {
-	return r.DB.WithContext(ctx).Create(&body).Error
+	tracer := otel.Tracer("order-repository")
+	ctx, span := tracer.Start(ctx, "Book")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("order_id", body.ID),
+		attribute.String("ticket_id", body.TicketID),
+		attribute.Int("quantity", body.Quantity),
+	)
+
+	err := r.DB.WithContext(ctx).Create(&body).Error
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
+	}
+
+	span.SetStatus(codes.Ok, "order created successfully")
+	return nil
 }
 
 func (r *OrderRepository) Reserve(ctx context.Context, body entity.ReserveOrderRequest) error {

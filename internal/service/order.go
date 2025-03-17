@@ -35,12 +35,16 @@ func (s *OrderService) Book(ctx context.Context, body entity.BookOrderRequest) e
 
 	span.SetAttributes(attribute.String("ticket_id", body.TicketID), attribute.Int("quantity", body.Quantity))
 
+	ctx, validationSpan := tracer.Start(ctx, "validate_ticket")
+	validationSpan.SetAttributes(attribute.String("ticket_id", body.TicketID))
 	ticket, err := s.ticketRepository.FindById(ctx, body.TicketID)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
+		validationSpan.RecordError(err)
+		validationSpan.SetStatus(codes.Error, err.Error())
 		return err
 	}
+	validationSpan.End()
+
 	if ticket.RemainingCapacity < body.Quantity {
 		span.RecordError(errors.New("remaining ticket is not enough"))
 		span.SetStatus(codes.Error, "remaining ticket is not enough")

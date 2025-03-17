@@ -35,7 +35,6 @@ services:
       - "6831:6831/udp"
       - "6832:6832/udp"
       - "5778:5778"
-      - "4317:4317"
       - "16686:16686"
       - "14268:14268"
       - "14250:14250"
@@ -44,6 +43,21 @@ services:
       - jaeger:/tmp
     networks:
       - booking_net
+    
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - otel-collector
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yml
+      - prometheus:/prometheus
+    networks:
+      - booking_net
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
@@ -70,6 +84,7 @@ volumes:
   rabbitmq:
   jaeger:
   otel-collector:
+  prometheus:
 
 networks:
   booking_net:

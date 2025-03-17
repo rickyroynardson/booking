@@ -13,6 +13,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/rickyroynardson/booking/config"
 	"github.com/rickyroynardson/booking/internal/handler"
@@ -95,6 +96,7 @@ func main() {
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "booking")
 	})
+	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
 	e.GET("/shows", showHandler.FindAll)
 	e.GET("/shows/:id", showHandler.FindById)
 	e.POST("/shows", showHandler.Create)
