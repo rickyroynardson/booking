@@ -11,6 +11,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/metric"
 )
 
 type OrderService struct {
@@ -29,9 +30,15 @@ func NewOrderService(repository *repository.OrderRepository, ticketRepository *r
 
 func (s *OrderService) Book(ctx context.Context, body entity.BookOrderRequest) error {
 	tracer := otel.Tracer("order-service")
+	meter := otel.Meter("order-service")
 
 	ctx, span := tracer.Start(ctx, "Book")
 	defer span.End()
+
+	orderCount, err := meter.Int64Counter("order_count", metric.WithDescription("Numbers of order"))
+	if err != nil {
+		return err
+	}
 
 	span.SetAttributes(attribute.String("ticket_id", body.TicketID), attribute.Int("quantity", body.Quantity))
 
@@ -73,6 +80,7 @@ func (s *OrderService) Book(ctx context.Context, body entity.BookOrderRequest) e
 	}
 
 	span.SetAttributes(attribute.String("order_id", orderID))
+	orderCount.Add(ctx, 1)
 	return nil
 }
 

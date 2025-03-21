@@ -79,12 +79,23 @@ services:
     networks:
       - booking_net
 
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana:/var/lib/grafana
+    networks:
+      - booking_net
+
 volumes:
   db:
   rabbitmq:
   jaeger:
   otel-collector:
   prometheus:
+  grafana:
 
 networks:
   booking_net:
